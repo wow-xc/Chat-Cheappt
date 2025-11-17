@@ -133,4 +133,158 @@
         </main>
     </div>
 </body>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const userStr = localStorage.getItem('user');
+    const authButtons = document.getElementById('authButtons');
+    const userMenu = document.getElementById('userMenu');
+    const userNameSpan = document.getElementById('userName');
+    const messageInput = document.getElementById('messageInput');
+    const sendBtn = document.getElementById('sendBtn');
+    const messagesList = document.getElementById('messagesList');
+    const conversationsList = document.getElementById('conversationsList'); // 사이드바 목록
+    const emptyState = document.getElementById('emptyState');
+
+    let currentUser = null;
+    let currentConversationId = null; // 현재 보고 있는 대화방 ID
+
+    // 1. 초기화 및 로그인 상태 체크
+    if (userStr) {
+        currentUser = JSON.parse(userStr);
+        authButtons.classList.add('hidden');
+        userMenu.classList.remove('hidden');
+        userNameSpan.textContent = currentUser.name;
+        messageInput.disabled = false;
+        
+        // 로그인했으면 대화 목록 불러오기
+        loadConversations();
+    } else {
+        messageInput.disabled = true;
+        messageInput.placeholder = "로그인이 필요합니다.";
+    }
+
+    // 2. 로그아웃
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+        if(confirm('로그아웃 하시겠습니까?')) {
+            localStorage.removeItem('user');
+            window.location.reload();
+        }
+    });
+
+    // 3. 새 채팅 버튼
+    document.getElementById('newChatBtn').addEventListener('click', () => {
+        currentConversationId = null;
+        messagesList.innerHTML = ''; // 화면 비우기
+        emptyState.classList.remove('hidden');
+        loadConversations(); // 목록 새로고침 (선택 효과 제거용)
+    });
+
+    // 4. 대화 목록 불러오기 함수
+    async function loadConversations() {
+        if (!currentUser) return;
+        const res = await fetch(`/api/conversations/${currentUser.id}`);
+        const conversations = await res.json();
+        
+        conversationsList.innerHTML = ''; // 기존 목록 초기화
+        conversations.forEach(conv => {
+            const div = document.createElement('div');
+            div.className = 'conversation-item';
+            div.innerHTML = `
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
+                <div class="conversation-title">${conv.title}</div>
+            `;
+            // 목록 클릭 시 해당 대화 불러오기
+            div.addEventListener('click', () => loadMessages(conv.id));
+            conversationsList.appendChild(div);
+        });
+    }
+
+    // 5. 특정 대화 내용 불러오기 함수
+    async function loadMessages(conversationId) {
+        currentConversationId = conversationId;
+        emptyState.classList.add('hidden');
+        messagesList.innerHTML = ''; // 화면 초기화
+
+        const res = await fetch(`/api/conversations/${conversationId}/messages`);
+        const messages = await res.json();
+
+        messages.forEach(msg => appendMessage(msg.role, msg.content));
+        
+        // 사이드바 선택 효과 (간단히)
+        loadConversations().then(() => {
+            // 여기에 선택된 항목 하이라이트 로직 추가 가능
+        });
+    }
+
+    // 6. 메시지 전송
+    sendBtn.addEventListener('click', sendMessage);
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+    messageInput.addEventListener('input', () => sendBtn.disabled = messageInput.value.trim() === '');
+
+    async function sendMessage() {
+        const text = messageInput.value.trim();
+        if (!text || !currentUser) return;
+
+        messageInput.value = '';
+        emptyState.classList.add('hidden');
+        appendMessage('user', text);
+
+        try {
+            const loadingId = appendMessage('assistant', '...'); // 로딩 표시
+            
+            const res = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    userId: currentUser.id, 
+                    message: text,
+                    conversationId: currentConversationId // 현재 방 ID (없으면 null)
+                })
+            });
+
+            const data = await res.json();
+            document.getElementById(loadingId).remove(); // 로딩 삭제
+
+            if (res.ok) {
+                appendMessage('assistant', data.reply);
+                
+                // 처음 대화 시작했다면(방이 새로 생겼다면) 목록 새로고침
+                if (!currentConversationId) {
+                    currentConversationId = data.conversationId;
+                    loadConversations();
+                }
+            } else {
+                appendMessage('assistant', 'Error: ' + data.error);
+            }
+        } catch (e) {
+            console.error(e);
+        }
+    }
+
+    // 화면에 메시지 그리기 헬퍼 함수
+    function appendMessage(role, text) {
+        const msgId = 'msg-' + Date.now();
+        const isUser = role === 'user';
+        const html = `
+            <div class="message" id="${msgId}">
+                <div class="message-avatar ${role}">
+                    ${isUser ? 'U' : 'G'}
+                </div>
+                <div class="message-content">
+                    <div class="message-role">${isUser ? '나' : 'ChatGPT'}</div>
+                    <div class="message-text">${text}</div>
+                </div>
+            </div>
+        `;
+        messagesList.insertAdjacentHTML('beforeend', html);
+        messagesList.scrollTop = messagesList.scrollHeight; // 스크롤 내리기
+        return msgId;
+    }
+});
+</script>
 </html>
