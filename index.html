@@ -89,7 +89,29 @@
                         <line x1="3" y1="18" x2="21" y2="18"></line>
                     </svg>
                 </button>
-                <h1 class="chat-title">ChatGPT 4</h1>
+                
+                <div class="model-selector">
+                    <button id="modelBtn" class="model-btn">
+                        <span id="currentModelText">GPT-4</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="6 9 12 15 18 9"></polyline>
+                        </svg>
+                    </button>
+                    <div id="modelMenu" class="model-menu hidden">
+                        <div class="model-option" data-value="gpt-4">
+                            <div class="model-name">GPT-4</div>
+                            <div class="model-desc">가장 똑똑함, 복잡한 작업용</div>
+                        </div>
+                        <div class="model-option" data-value="gpt-4o">
+                            <div class="model-name">GPT-4o</div>
+                            <div class="model-desc">최신 모델, 빠르고 똑똑함</div>
+                        </div>
+                        <div class="model-option" data-value="gpt-3.5-turbo">
+                            <div class="model-name">GPT-3.5 Turbo</div>
+                            <div class="model-desc">엄청 빠름, 간단한 대화용</div>
+                        </div>
+                    </div>
+                </div>
             </header>
             <!-- Messages Area -->
             <div id="messagesContainer" class="messages-container">
@@ -97,12 +119,6 @@
                     <div class="empty-state-content">
                         <div class="empty-icon">💬</div>
                         <h2 class="empty-title">무엇을 도와드릴까요?</h2>
-                        <div class="suggestions-grid">
-                            <button class="suggestion-btn" data-suggestion="코드 작성 도움">코드 작성 도움</button>
-                            <button class="suggestion-btn" data-suggestion="아이디어 브레인스토밍">아이디어 브레인스토밍</button>
-                            <button class="suggestion-btn" data-suggestion="질문에 답변하기">질문에 답변하기</button>
-                            <button class="suggestion-btn" data-suggestion="글쓰기 도움">글쓰기 도움</button>
-                        </div>
                     </div>
                 </div>
                 <div id="messagesList" class="messages-list">
@@ -148,6 +164,46 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentUser = null;
     let currentConversationId = null; // 현재 보고 있는 대화방 ID
 
+    const toggleBtn = document.getElementById('toggleSidebarBtn'); // 왼쪽 상단 아이콘 버튼
+    const sidebar = document.getElementById('sidebar');            // 사이드바 요소
+
+    if (toggleBtn && sidebar) {
+        toggleBtn.addEventListener('click', () => {
+            sidebar.classList.toggle('collapsed'); // 클래스를 줬다 뺏었다 함
+        });
+    }
+
+    // 0.5 모델 선택 기능
+    const modelBtn = document.getElementById('modelBtn');
+    const modelMenu = document.getElementById('modelMenu');
+    const currentModelText = document.getElementById('currentModelText');
+    let currentModel = 'gpt-4'; // 기본값
+
+    // 메뉴 열기/닫기
+    modelBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        modelMenu.classList.toggle('hidden');
+    });
+
+    // 모델 선택하기
+    document.querySelectorAll('.model-option').forEach(option => {
+        option.addEventListener('click', () => {
+            currentModel = option.dataset.value; // 선택한 모델 값 저장
+            
+            // 버튼 텍스트 변경 (설명 빼고 이름만)
+            currentModelText.textContent = option.querySelector('.model-name').textContent;
+            
+            modelMenu.classList.add('hidden'); // 메뉴 닫기
+        });
+    });
+
+    // 화면 아무데나 클릭하면 메뉴 닫기
+    document.addEventListener('click', () => {
+        if (!modelMenu.classList.contains('hidden')) {
+            modelMenu.classList.add('hidden');
+        }
+    });
+
     // 1. 초기화 및 로그인 상태 체크
     if (userStr) {
         currentUser = JSON.parse(userStr);
@@ -180,21 +236,58 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // 4. 대화 목록 불러오기 함수
+    // 4. 대화 목록 불러오기 함수 (수정됨: 삭제 버튼 추가)
     async function loadConversations() {
         if (!currentUser) return;
         const res = await fetch(`/api/conversations/${currentUser.id}`);
         const conversations = await res.json();
         
         conversationsList.innerHTML = ''; // 기존 목록 초기화
+        
         conversations.forEach(conv => {
             const div = document.createElement('div');
             div.className = 'conversation-item';
+            
+            // HTML 구성: 제목 + 삭제 버튼(휴지통)
             div.innerHTML = `
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                 <div class="conversation-title">${conv.title}</div>
+                <div class="conversation-actions">
+                    <button class="conversation-action-btn delete-btn">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                    </button>
+                </div>
             `;
-            // 목록 클릭 시 해당 대화 불러오기
+
+            // 1. 목록 클릭 시 해당 대화 불러오기
             div.addEventListener('click', () => loadMessages(conv.id));
+
+            // 2. 삭제 버튼 클릭 이벤트
+            const deleteBtn = div.querySelector('.delete-btn');
+            deleteBtn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // 부모 요소(목록) 클릭 이벤트 방지 (중요!)
+                
+                if (confirm('정말 이 대화를 삭제하시겠습니까?')) {
+                    try {
+                        const res = await fetch(`/api/conversations/${conv.id}`, { method: 'DELETE' });
+                        if (res.ok) {
+                            // 현재 보고 있는 방을 삭제했다면 화면 비우기
+                            if (currentConversationId === conv.id) {
+                                document.getElementById('newChatBtn').click();
+                            }
+                            loadConversations(); // 목록 새로고침
+                        } else {
+                            alert('삭제 실패');
+                        }
+                    } catch (err) {
+                        console.error(err);
+                    }
+                }
+            });
+
             conversationsList.appendChild(div);
         });
     }
@@ -225,12 +318,28 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
     messageInput.addEventListener('input', () => sendBtn.disabled = messageInput.value.trim() === '');
-
+    messageInput.addEventListener('input', function() {
+        // 1. 전송 버튼 활성화 여부
+        sendBtn.disabled = this.value.trim() === '';
+        
+        // 2. 높이 조절 로직
+        this.style.height = 'auto'; // 높이 초기화
+        this.style.height = (this.scrollHeight) + 'px'; // 내용만큼 늘리기
+        
+        // 200px 넘으면 스크롤 생기게
+        if (this.scrollHeight > 200) {
+            this.style.overflowY = "scroll";
+        } else {
+            this.style.overflowY = "hidden";
+        }
+    });
     async function sendMessage() {
         const text = messageInput.value.trim();
         if (!text || !currentUser) return;
 
         messageInput.value = '';
+        messageInput.style.height = 'auto'; // <--- 이 줄이 중요합니다! (전송 후 줄어들기)
+        sendBtn.disabled = true;
         emptyState.classList.add('hidden');
         appendMessage('user', text);
 
@@ -243,7 +352,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 body: JSON.stringify({ 
                     userId: currentUser.id, 
                     message: text,
-                    conversationId: currentConversationId // 현재 방 ID (없으면 null)
+                    conversationId: currentConversationId, // 현재 방 ID (없으면 null)
+                    model: currentModel
                 })
             });
 
@@ -267,13 +377,23 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // 화면에 메시지 그리기 헬퍼 함수
+    // 화면에 메시지 그리기 헬퍼 함수 (수정됨: ID 중복 방지)
     function appendMessage(role, text) {
-        const msgId = 'msg-' + Date.now();
+        // [수정] Date.now() 뒤에 랜덤 숫자를 붙여서 절대 안 겹치게 함
+        const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
+        
         const isUser = role === 'user';
         const html = `
             <div class="message" id="${msgId}">
                 <div class="message-avatar ${role}">
-                    ${isUser ? 'U' : 'G'}
+                    ${isUser ? `
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    ` : `
+                    <div class="logo-icon" style="font-size: 16px;">💬</div>
+                    `}
                 </div>
                 <div class="message-content">
                     <div class="message-role">${isUser ? '나' : 'ChatGPT'}</div>
@@ -282,7 +402,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>
         `;
         messagesList.insertAdjacentHTML('beforeend', html);
-        messagesList.scrollTop = messagesList.scrollHeight; // 스크롤 내리기
+        messagesList.scrollTop = messagesList.scrollHeight;
         return msgId;
     }
 });
