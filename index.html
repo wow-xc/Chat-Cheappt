@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ChatGPT Clone</title>
+    <title>ChatCheappt</title>
     <link rel="icon" href="data:,"> 
     <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,7 +13,16 @@
         <aside id="sidebar" class="sidebar">
             <!-- New Chat Button -->
             <div class="sidebar-header">
-                <button id="newChatBtn" class="new-chat-btn">
+                <button id="galleryBtn" class="new-chat-btn">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                        <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                        <polyline points="21 15 16 10 5 21"></polyline>
+                    </svg>
+                    <span>라이브러리</span>
+                </button>
+
+                <button id="newChatBtn" class="new-chat-btn" >
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                         <line x1="12" y1="5" x2="12" y2="19"></line>
                         <line x1="5" y1="12" x2="19" y2="12"></line>
@@ -167,15 +176,29 @@
                 </div>
             </div>
 
-            <!-- Input Area -->
             <div class="input-container">
+                <div id="imagePreviewContainer" class="image-preview-container hidden">
+                    <div class="preview-wrapper">
+                        <img id="imagePreview" src="" alt="Preview">
+                        <button id="removeImageBtn" class="remove-image-btn">&times;</button>
+                    </div>
+                </div>
+
                 <div class="input-wrapper">
+                    <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                    <button id="attachBtn" class="attach-btn">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
+                        </svg>
+                    </button>
+
                     <textarea 
                         id="messageInput" 
                         class="message-input" 
                         placeholder="메시지를 입력하세요..."
                         rows="1"
                     ></textarea>
+                    
                     <button id="sendBtn" class="send-btn" disabled>
                         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                             <line x1="22" y1="2" x2="11" y2="13"></line>
@@ -184,11 +207,35 @@
                     </button>
                 </div>
                 <p class="input-disclaimer">
-                    ChatGPT는 실수를 할 수 있습니다. 중요한 정보는 확인하세요.
+                    ChatCheapt는 실수를 할 수 있습니다. 중요한 정보는 확인하세요.
                 </p>
             </div>
         </main>
     </div>
+    <div id="galleryModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 900px; width: 90%; height: 85vh; display: flex; flex-direction: column; background: #212121;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+            <h3 style="font-size: 20px; font-weight: 600;">🎨 내 이미지 라이브러리</h3>
+            <button id="closeGalleryBtn" style="background: none; border: none; color: white; cursor: pointer; font-size: 28px;">&times;</button>
+        </div>
+        <div id="galleryGrid" class="gallery-grid">
+            </div>
+    </div>
+</div>
+<div id="confirmModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 360px; height: auto; text-align: center; padding: 32px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🗑️</div>
+        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: white;">대화 삭제</h3>
+        <p style="font-size: 15px; color: #bbb; margin-bottom: 24px; line-height: 1.5;">
+            정말로 이 대화를 삭제하시겠습니까?<br>
+            삭제된 대화는 복구할 수 없습니다.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="cancelDeleteBtn" class="sidebar-menu-btn" style="width: 100%; justify-content: center; background: #333; border-radius: 8px;">취소</button>
+            <button id="confirmDeleteBtn" class="submit-btn" style="width: 100%; margin-top: 0; background: #ef4444; color: white; border: none; border-radius: 8px;">삭제</button>
+        </div>
+    </div>
+</div>
 </body>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -276,8 +323,56 @@ document.addEventListener('DOMContentLoaded', () => {
         loadConversations(); // 목록 새로고침 (선택 효과 제거용)
     });
 
-    // 4. 대화 목록 불러오기 함수
-    // 4. 대화 목록 불러오기 함수 (수정됨: 삭제 버튼 추가)
+    // ==========================================
+    // [수정됨] 4. 대화 목록 불러오기 + 커스텀 삭제 모달
+    // ==========================================
+    
+    // 삭제할 대화방 ID를 임시로 저장할 변수
+    let pendingDeleteId = null;
+    
+    // 모달 요소 가져오기
+    const confirmModal = document.getElementById('confirmModal');
+    const confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    const cancelDeleteBtn = document.getElementById('cancelDeleteBtn');
+
+    // [모달 이벤트] 취소 버튼 클릭 시
+    cancelDeleteBtn.addEventListener('click', () => {
+        confirmModal.classList.add('hidden');
+        pendingDeleteId = null;
+    });
+
+    // [모달 이벤트] 삭제 확정 버튼 클릭 시
+    confirmDeleteBtn.addEventListener('click', async () => {
+        if (!pendingDeleteId) return;
+
+        try {
+            const res = await fetch(`/api/conversations/${pendingDeleteId}`, { method: 'DELETE' });
+            if (res.ok) {
+                // 현재 보고 있는 방을 삭제했다면 화면 비우기
+                if (currentConversationId === pendingDeleteId) {
+                    document.getElementById('newChatBtn').click();
+                }
+                loadConversations(); // 목록 새로고침
+            } else {
+                alert('삭제 실패');
+            }
+        } catch (err) {
+            console.error(err);
+        } finally {
+            // 모달 닫기 및 초기화
+            confirmModal.classList.add('hidden');
+            pendingDeleteId = null;
+        }
+    });
+
+    // 모달 배경 클릭 시 닫기
+    confirmModal.addEventListener('click', (e) => {
+        if (e.target === confirmModal) {
+            confirmModal.classList.add('hidden');
+            pendingDeleteId = null;
+        }
+    });
+
     async function loadConversations() {
         if (!currentUser) return;
         const res = await fetch(`/api/conversations/${currentUser.id}`);
@@ -306,27 +401,12 @@ document.addEventListener('DOMContentLoaded', () => {
             // 1. 목록 클릭 시 해당 대화 불러오기
             div.addEventListener('click', () => loadMessages(conv.id));
 
-            // 2. 삭제 버튼 클릭 이벤트
+            // 2. 삭제 버튼 클릭 이벤트 (커스텀 모달 호출)
             const deleteBtn = div.querySelector('.delete-btn');
-            deleteBtn.addEventListener('click', async (e) => {
-                e.stopPropagation(); // 부모 요소(목록) 클릭 이벤트 방지 (중요!)
-                
-                if (confirm('정말 이 대화를 삭제하시겠습니까?')) {
-                    try {
-                        const res = await fetch(`/api/conversations/${conv.id}`, { method: 'DELETE' });
-                        if (res.ok) {
-                            // 현재 보고 있는 방을 삭제했다면 화면 비우기
-                            if (currentConversationId === conv.id) {
-                                document.getElementById('newChatBtn').click();
-                            }
-                            loadConversations(); // 목록 새로고침
-                        } else {
-                            alert('삭제 실패');
-                        }
-                    } catch (err) {
-                        console.error(err);
-                    }
-                }
+            deleteBtn.addEventListener('click', (e) => {
+                e.stopPropagation(); // 목록 클릭 방지
+                pendingDeleteId = conv.id; // 삭제할 ID 저장
+                confirmModal.classList.remove('hidden'); // 모달 열기
             });
 
             conversationsList.appendChild(div);
@@ -350,61 +430,153 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // 6. 메시지 전송
-    sendBtn.addEventListener('click', sendMessage);
-    messageInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-    messageInput.addEventListener('input', () => sendBtn.disabled = messageInput.value.trim() === '');
+    const fileInput = document.getElementById('fileInput');
+    const attachBtn = document.getElementById('attachBtn');
+    const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+    const imagePreview = document.getElementById('imagePreview');
+    const removeImageBtn = document.getElementById('removeImageBtn');
+
+    let currentImageBase64 = null; // 전송할 이미지 데이터 저장용
+
+    function checkSendButton() {
+        const hasText = messageInput.value.trim().length > 0;
+        const hasImage = currentImageBase64 !== null;
+        
+        // 텍스트나 이미지 둘 중 하나라도 있으면 버튼 활성화
+        sendBtn.disabled = !(hasText || hasImage);
+    }
+
+    // [위치] function checkSendButton() { ... } 바로 아래에 붙여넣으세요.
+
+    // 1. [추가됨] 텍스트 입력 감지 (버튼 활성화 + 높이 조절)
     messageInput.addEventListener('input', function() {
-        // 1. 전송 버튼 활성화 여부
-        sendBtn.disabled = this.value.trim() === '';
+        checkSendButton(); // 텍스트 칠 때마다 버튼 상태 확인
         
-        // 2. 높이 조절 로직
-        this.style.height = 'auto'; // 높이 초기화
-        this.style.height = (this.scrollHeight) + 'px'; // 내용만큼 늘리기
-        
-        // 200px 넘으면 스크롤 생기게
+        // 높이 자동 조절 로직
+        this.style.height = 'auto';
+        this.style.height = (this.scrollHeight) + 'px';
         if (this.scrollHeight > 200) {
             this.style.overflowY = "scroll";
         } else {
             this.style.overflowY = "hidden";
         }
     });
+
+    // 2. [수정됨] 파일 선택 시 처리 (버튼 활성화 추가)
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentImageBase64 = e.target.result;
+            imagePreview.src = currentImageBase64;
+            imagePreviewContainer.classList.remove('hidden');
+            messageInput.focus();
+            
+            checkSendButton(); // [중요] 사진이 올라갔으니 버튼 켜기!
+        };
+        reader.readAsDataURL(file);
+    });
+
+    // 3. [수정됨] 미리보기 삭제 버튼 (버튼 상태 재확인)
+    removeImageBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        currentImageBase64 = null;
+        imagePreviewContainer.classList.add('hidden');
+        
+        checkSendButton(); // [중요] 사진 지웠으니 버튼 상태 다시 체크
+    });
+
+    // 4. [필수] 전송 버튼 클릭 연결
+    sendBtn.addEventListener('click', sendMessage);
+
+    // 5. [필수] 엔터키 전송 연결
+    messageInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (!sendBtn.disabled) { 
+                sendMessage();
+            }
+        }
+    });
+
+    // 1. 클립 버튼 클릭 -> 파일 선택창 열기
+    attachBtn.addEventListener('click', () => fileInput.click());
+
+    // 2. 파일 선택 시 처리 (Base64 변환 및 미리보기)
+    fileInput.addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            currentImageBase64 = e.target.result; // Base64 문자열 저장
+            imagePreview.src = currentImageBase64;
+            imagePreviewContainer.classList.remove('hidden'); // 미리보기 보여주기
+            messageInput.focus();
+        };
+        reader.readAsDataURL(file); // 파일을 읽어서 문자열로 변환
+    });
+
+    // 3. 미리보기 삭제 버튼
+    removeImageBtn.addEventListener('click', () => {
+        fileInput.value = '';
+        currentImageBase64 = null;
+        imagePreviewContainer.classList.add('hidden');
+    });
+
+    // 6. 메시지 전송
     async function sendMessage() {
         const text = messageInput.value.trim();
-        if (!text || !currentUser) return;
+        
+        // 텍스트도 없고 이미지도 없으면 리턴
+        if ((!text && !currentImageBase64) || !currentUser) return;
 
+        // 화면 초기화
         messageInput.value = '';
-        messageInput.style.height = 'auto'; // <--- 이 줄이 중요합니다! (전송 후 줄어들기)
+        messageInput.style.height = 'auto';
         sendBtn.disabled = true;
         emptyState.classList.add('hidden');
-        appendMessage('user', text);
+        
+        // 미리보기 초기화 (중요)
+        imagePreviewContainer.classList.add('hidden');
+        
+        // 내 메시지 표시 (이미지가 있으면 이미지도 같이 표시)
+        if (currentImageBase64) {
+            appendMessage('user', `<img src="${currentImageBase64}" style="max-width: 200px; border-radius: 8px; display: block; margin-bottom: 8px;"> ${text}`);
+        } else {
+            appendMessage('user', text);
+        }
+
+        // 전송할 데이터 백업 (전송 후 변수 초기화 위해)
+        const payloadImage = currentImageBase64;
+        const payloadText = text;
+        
+        // 변수 초기화
+        currentImageBase64 = null; 
+        fileInput.value = '';
 
         try {
-            const loadingId = appendMessage('assistant', '...'); // 로딩 표시
+            const loadingId = appendMessage('assistant', '...'); 
             
             const res = await fetch('/api/chat', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     userId: currentUser.id, 
-                    message: text,
-                    conversationId: currentConversationId, // 현재 방 ID (없으면 null)
+                    message: payloadText,
+                    image: payloadImage, // [NEW] 이미지 데이터 추가 전송
+                    conversationId: currentConversationId,
                     model: currentModel
                 })
             });
 
             const data = await res.json();
-            document.getElementById(loadingId).remove(); // 로딩 삭제
+            document.getElementById(loadingId).remove();
 
             if (res.ok) {
                 appendMessage('assistant', data.reply);
-                
-                // 처음 대화 시작했다면(방이 새로 생겼다면) 목록 새로고침
                 if (!currentConversationId) {
                     currentConversationId = data.conversationId;
                     loadConversations();
@@ -437,7 +609,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     `}
                 </div>
                 <div class="message-content">
-                    <div class="message-role">${isUser ? '나' : 'ChatGPT'}</div>
+                    <div class="message-role">${isUser ? '나' : 'ChatCheappt'}</div>
                     <div class="message-text">${text}</div>
                 </div>
             </div>
@@ -446,6 +618,61 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesList.scrollTop = messagesList.scrollHeight;
         return msgId;
     }
+    // ... (기존 코드들) ...
+
+    // [NEW] 갤러리 기능 구현
+    const galleryBtn = document.getElementById('galleryBtn');
+    const galleryModal = document.getElementById('galleryModal');
+    const closeGalleryBtn = document.getElementById('closeGalleryBtn');
+    const galleryGrid = document.getElementById('galleryGrid');
+
+    // 갤러리 열기
+    galleryBtn.addEventListener('click', async () => {
+        if (!currentUser) return alert('로그인이 필요합니다.');
+        
+        galleryModal.classList.remove('hidden');
+        galleryGrid.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 20px;">이미지를 불러오는 중...</p>';
+
+        try {
+            const res = await fetch(`/api/images/${currentUser.id}`);
+            const images = await res.json();
+
+            galleryGrid.innerHTML = ''; // 초기화
+
+            if (images.length === 0) {
+                galleryGrid.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 20px;">아직 생성된 이미지가 없습니다.</p>';
+                return;
+            }
+
+            images.forEach(img => {
+                const div = document.createElement('div');
+                div.className = 'gallery-item';
+                div.innerHTML = `
+                    <img src="${img.image_path}" alt="${img.prompt}" loading="lazy">
+                    <div class="gallery-overlay">
+                        <p class="gallery-prompt">${img.prompt}</p>
+                        <div style="margin-top: 4px;">
+                            <a href="${img.image_path}" download class="gallery-link">다운로드</a>
+                        </div>
+                    </div>
+                `;
+                galleryGrid.appendChild(div);
+            });
+        } catch (err) {
+            console.error(err);
+            galleryGrid.innerHTML = '<p>불러오기 실패</p>';
+        }
+    });
+
+    // 갤러리 닫기 (X 버튼)
+    closeGalleryBtn.addEventListener('click', () => galleryModal.classList.add('hidden'));
+
+    // 갤러리 닫기 (배경 클릭)
+    galleryModal.addEventListener('click', (e) => {
+        if (e.target === galleryModal) {
+            galleryModal.classList.add('hidden');
+        }
+    });
 });
 </script>
 </html>

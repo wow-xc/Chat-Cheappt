@@ -3,19 +3,21 @@ const mysql = require('mysql2');
 const bcrypt = require('bcrypt');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const OpenAI = require('openai');
 
 const app = express();
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 app.use(express.static(path.join(__dirname, '.')));
 app.use(cors());
-
 // DB 연결
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '1234', // 본인 비밀번호 확인!
+    password: 'wowxc', // 본인 비밀번호 확인!
     database: 'chatgpt_clone'
 });
 
@@ -65,62 +67,76 @@ app.get('/api/conversations/:conversationId/messages', (req, res) => {
     });
 });
 
+// [NEW] 4.5 이미지 라이브러리 목록 가져오기
+// ==========================================
+app.get('/api/images/:userId', (req, res) => {
+    const sql = 'SELECT * FROM generated_images WHERE user_id = ? ORDER BY created_at DESC';
+    db.query(sql, [req.params.userId], (err, results) => {
+        if (err) return res.status(500).json({ error: 'DB 오류' });
+        res.json(results);
+    });
+});
 
-// 5. [UPDATE] 채팅하기 (완벽 수정됨 🌟)
+// 5. [UPDATE] 채팅, 이미지 생성, 비전 인식 통합 API
 app.post('/api/chat', async (req, res) => {
-    const { userId, message, conversationId, model } = req.body;
+    const { userId, message, conversationId, model, image } = req.body; // [NEW] image 받기
     const selectedModel = model || "gpt-4o";
-    
     let currentConvId = conversationId;
 
     try {
-        // 1. API Key 조회
+        // 1. 기본 설정 (API Key 등) - 기존과 동일
         const [userRows] = await db.promise().query('SELECT api_key FROM users WHERE id = ?', [userId]);
         if (userRows.length === 0) return res.status(400).json({ error: '유저 정보 없음' });
-        
         const apiKey = userRows[0].api_key;
         const openai = new OpenAI({ apiKey });
 
         // 2. 대화방 없으면 생성
         if (!currentConvId) {
-            const title = message.substring(0, 20);
+            // 이미지가 있으면 제목을 '이미지 대화'로
+            const title = image ? "이미지 분석" : message.substring(0, 20);
             const [convResult] = await db.promise().query('INSERT INTO conversations (user_id, title) VALUES (?, ?)', [userId, title]);
             currentConvId = convResult.insertId;
         }
 
-        // 3. 유저 질문 저장
-        await db.promise().query('INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)', [currentConvId, 'user', message]);
+        // 3. 유저 메시지 저장 (이미지는 용량 문제로 텍스트인 [이미지 첨부됨]으로 대체 저장 권장)
+        const savedContent = image ? `[이미지 첨부됨] ${message}` : message;
+        await db.promise().query('INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)', [currentConvId, 'user', savedContent]);
 
         let reply = "";
 
         // ====================================================
-        // 4. 모델에 따른 분기 처리 (이미지 vs 텍스트)
+        // 4. 모델 분기 처리
         // ====================================================
+        
+        // [A] DALL-E 3 (이미지 생성)
         if (selectedModel === 'dall-e-3') {
-            // [A] 이미지 생성 모드
+            // ... (기존 DALL-E 코드 그대로 사용) ...
             try {
                 const imageResponse = await openai.images.generate({
-                    model: "dall-e-3",
-                    prompt: message,
-                    n: 1,
-                    size: "1024x1024",
+                    model: "dall-e-3", prompt: message, n: 1, size: "1024x1024",
                 });
-                
-                const imageUrl = imageResponse.data[0].url;
-                
-                // 프론트엔드에서 바로 보이게 HTML 태그로 저장
-                reply = `<img src="${imageUrl}" alt="Generated Image" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">`;
-                
-            } catch (imgError) {
-                console.error("DALL-E Error:", imgError);
-                reply = "이미지 생성 중 오류가 발생했습니다. (API 키 권한이나 크레딧을 확인하세요)";
-            }
+                const originalUrl = imageResponse.data[0].url;
+                const fileName = `img-${Date.now()}.png`;
+                const localPath = path.join(__dirname, 'uploads', fileName);
+                const imgRes = await fetch(originalUrl);
+                const buffer = Buffer.from(await imgRes.arrayBuffer());
+                fs.writeFileSync(localPath, buffer);
+                const webPath = `/uploads/${fileName}`;
+                await db.promise().query('INSERT INTO generated_images (user_id, prompt, image_path) VALUES (?, ?, ?)', [userId, message, webPath]);
+                reply = `<img src="${webPath}" alt="${message}" style="max-width: 100%; border-radius: 10px; margin-top: 10px;">`;
+            } catch (e) { reply = "에러: " + e.message; }
 
-        } else {
-            // [B] 일반 채팅 모드 (기존 로직)
+        } 
+        // [B] Sora (비디오)
+        else if (selectedModel.startsWith('sora')) {
+            // ... (기존 Sora 코드 그대로 사용) ...
+            reply = "Sora 기능은 현재 API 정책상 보류 중입니다."; 
+        }
+        // [C] GPT (텍스트 & 비전) <--- 여기가 핵심 수정됨!
+        else {
             const systemMessage = {
                 role: "system",
-                content: `You are a helpful assistant. You are currently using the model: ${selectedModel}.`
+                content: `You are a helpful assistant. Model: ${selectedModel}.`
             };
 
             // 이전 대화 기록 불러오기
@@ -131,12 +147,23 @@ app.post('/api/chat', async (req, res) => {
 
             const messagesForAI = [
                 systemMessage, 
-                ...historyRows.map(row => ({ 
-                    role: row.role,
-                    content: row.content
-                })),
-                { role: "user", content: message } 
+                ...historyRows.map(row => ({ role: row.role, content: row.content })),
             ];
+
+            // [NEW] 현재 메시지 구성 (이미지가 있냐 없냐에 따라 다름)
+            if (image) {
+                // 이미지가 있으면: 멀티모달 포맷으로 전송
+                messagesForAI.push({
+                    role: "user",
+                    content: [
+                        { type: "text", text: message || "이 이미지에 대해 설명해줘" },
+                        { type: "image_url", image_url: { url: image } } // Base64 이미지
+                    ]
+                });
+            } else {
+                // 텍스트만 있으면: 일반 포맷
+                messagesForAI.push({ role: "user", content: message });
+            }
 
             const completion = await openai.chat.completions.create({
                 model: selectedModel,
@@ -146,17 +173,16 @@ app.post('/api/chat', async (req, res) => {
             reply = completion.choices[0].message.content;
         }
 
-        // 5. AI 응답(또는 이미지 태그) DB 저장
+        // 5. 결과 저장
         await db.promise().query('INSERT INTO messages (conversation_id, role, content) VALUES (?, ?, ?)', [currentConvId, 'assistant', reply]);
 
         res.json({ reply, conversationId: currentConvId });
 
     } catch (error) {
-        console.error('에러 발생:', error);
+        console.error('Server Error:', error);
         res.status(500).json({ error: '서버 에러: ' + error.message });
     }
 });
-
 app.delete('/api/conversations/:id', (req, res) => {
     const conversationId = req.params.id;
 
