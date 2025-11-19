@@ -242,6 +242,20 @@
         </div>
     </div>
 </div>
+<div id="imageDeleteModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 360px; height: auto; text-align: center; padding: 32px;">
+        <div style="font-size: 48px; margin-bottom: 16px;">🖼️</div>
+        <h3 style="font-size: 20px; font-weight: 600; margin-bottom: 12px; color: white;">사진 삭제</h3>
+        <p style="font-size: 15px; color: #bbb; margin-bottom: 24px; line-height: 1.5;">
+            이 사진을 라이브러리에서 삭제하시겠습니까?<br>
+            삭제된 파일은 복구할 수 없습니다.
+        </p>
+        <div style="display: flex; gap: 12px; justify-content: center;">
+            <button id="cancelImgDeleteBtn" class="sidebar-menu-btn" style="width: 100%; justify-content: center; background: #333; border-radius: 8px;">취소</button>
+            <button id="confirmImgDeleteBtn" class="submit-btn" style="width: 100%; margin-top: 0; background: #ef4444; color: white; border: none; border-radius: 8px;">삭제</button>
+        </div>
+    </div>
+</div>
 </body>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -312,7 +326,12 @@ document.addEventListener('DOMContentLoaded', () => {
         messageInput.disabled = true;
         messageInput.placeholder = "로그인이 필요합니다.";
     }
-
+    const accountBtn = document.getElementById('accountBtn');
+    if (accountBtn) {
+        accountBtn.addEventListener('click', () => {
+            window.location.href = 'mypage.html';
+        });
+    }
     // 2. 로그아웃
     document.getElementById('logoutBtn').addEventListener('click', () => {
         if(confirm('로그아웃 하시겠습니까?')) {
@@ -562,7 +581,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 변수 초기화
         currentImageBase64 = null; 
         fileInput.value = '';
-
+        const systemPrompt = localStorage.getItem('systemPrompt') || "";
         try {
             const loadingId = appendMessage('assistant', '...'); 
             
@@ -574,7 +593,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     message: payloadText,
                     image: payloadImage, // [NEW] 이미지 데이터 추가 전송
                     conversationId: currentConversationId,
-                    model: currentModel
+                    model: currentModel,
+                    systemInstruction: systemPrompt
                 })
             });
 
@@ -595,41 +615,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // [수정됨] 화면 그리기 함수 (modelName 인자 추가)
+    // [수정됨] 화면 그리기 함수 (내 프로필 사진 & 이름 적용)
     function appendMessage(role, text, cost = null, modelName = null) {
         const msgId = 'msg-' + Date.now() + '-' + Math.random().toString(36).substr(2, 9);
         const isUser = role === 'user';
         let contentHtml = isUser ? text : marked.parse(text);
 
+        // 1. 비용 뱃지 (AI인 경우만)
         let costBadge = '';
         if (role === 'assistant' && cost !== null) {
             costBadge = `<div class="cost-badge"><span>💸 ${cost}원</span></div>`;
         }
 
-        // [핵심] AI 이름 결정 로직
-        // 모델 이름이 있으면 그걸 쓰고, 없으면(옛날 데이터) 기본 이름 'ChatCheappt' 사용
-        // 예쁘게 보이려고 첫 글자 대문자로 변환 (선택사항)
-        let displayName = 'ChatCheappt';
-        if (!isUser && modelName) {
-            displayName = modelName.toUpperCase(); // 예: gpt-4o -> GPT-4O
-        } else if (isUser) {
-            displayName = '나';
+        // 2. 이름 및 아바타 설정
+        let displayName = '';
+        let avatarHtml = '';
+
+        if (isUser) {
+            // [유저일 때] 내 이름과 사진 사용
+            displayName = currentUser ? currentUser.name : '나';
+            
+            if (currentUser && currentUser.profile_image) {
+                // 프로필 사진이 있으면 이미지 태그 사용
+                avatarHtml = `<img src="${currentUser.profile_image}" class="message-avatar" style="object-fit: cover; border: 1px solid rgba(255,255,255,0.1);">`;
+            } else {
+                // 없으면 기본 파란색 아이콘 사용
+                avatarHtml = `
+                    <div class="message-avatar user">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                            <circle cx="12" cy="7" r="4"></circle>
+                        </svg>
+                    </div>`;
+            }
+        } else {
+            // [AI일 때] 모델 이름과 로봇 아이콘 사용
+            displayName = modelName ? modelName.toUpperCase() : 'ChatCheappt';
+            avatarHtml = `
+                <div class="message-avatar assistant">
+                    <div class="logo-icon" style="font-size: 16px;">🤖</div>
+                </div>`;
         }
 
         const html = `
             <div class="message" id="${msgId}">
-                <div class="message-avatar ${role}">
-                    ${isUser ? `
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
-                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                        <circle cx="12" cy="7" r="4"></circle>
-                    </svg>
-                    ` : `
-                    <div class="logo-icon" style="font-size: 16px;">🤖</div>
-                    `}
-                </div>
+                ${avatarHtml}
                 <div class="message-content">
-                    <div class="message-role">${displayName}</div> <div class="message-text markdown-body">${contentHtml}</div>
+                    <div class="message-role">${displayName}</div>
+                    <div class="message-text markdown-body">${contentHtml}</div>
                     ${costBadge}
                 </div>
             </div>
@@ -645,35 +678,47 @@ document.addEventListener('DOMContentLoaded', () => {
         messagesList.scrollTop = messagesList.scrollHeight;
         return msgId;
     }
-
+    // [NEW] 갤러리 기능 구현 (삭제 기능 포함 완료)
     const galleryBtn = document.getElementById('galleryBtn');
     const galleryModal = document.getElementById('galleryModal');
     const closeGalleryBtn = document.getElementById('closeGalleryBtn');
     const galleryGrid = document.getElementById('galleryGrid');
 
-    // 갤러리 열기
+    // 이미지 삭제 관련 요소
+    const imageDeleteModal = document.getElementById('imageDeleteModal');
+    const confirmImgDeleteBtn = document.getElementById('confirmImgDeleteBtn');
+    const cancelImgDeleteBtn = document.getElementById('cancelImgDeleteBtn');
+    let pendingImageId = null; // 삭제 대기 중인 이미지 ID
+
+    // 1. 갤러리 열기 (이미지 목록 로드)
     galleryBtn.addEventListener('click', async () => {
         if (!currentUser) return alert('로그인이 필요합니다.');
         
         galleryModal.classList.remove('hidden');
-        galleryGrid.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 20px;">이미지를 불러오는 중...</p>';
+        galleryGrid.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 20px;">로딩 중...</p>';
 
         try {
             const res = await fetch(`/api/images/${currentUser.id}`);
             const images = await res.json();
 
-            galleryGrid.innerHTML = ''; // 초기화
+            galleryGrid.innerHTML = '';
 
             if (images.length === 0) {
-                galleryGrid.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 20px;">아직 생성된 이미지가 없습니다.</p>';
+                galleryGrid.innerHTML = '<p style="text-align:center; color:#888; grid-column: 1/-1; padding: 20px;">저장된 이미지가 없습니다.</p>';
                 return;
             }
 
             images.forEach(img => {
                 const div = document.createElement('div');
                 div.className = 'gallery-item';
+                // HTML: 이미지 + 오버레이 + 삭제버튼(휴지통 아이콘)
                 div.innerHTML = `
                     <img src="${img.image_path}" alt="${img.prompt}" loading="lazy">
+                    
+                    <button class="gallery-delete-btn" onclick="openImageDeleteModal(${img.id})">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                    </button>
+
                     <div class="gallery-overlay">
                         <p class="gallery-prompt">${img.prompt}</p>
                         <div style="margin-top: 4px;">
@@ -689,15 +734,46 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // 갤러리 닫기 (X 버튼)
-    closeGalleryBtn.addEventListener('click', () => galleryModal.classList.add('hidden'));
+    // 2. 삭제 모달 열기 함수 (HTML onclick에서 호출)
+    window.openImageDeleteModal = (id) => {
+        pendingImageId = id;
+        imageDeleteModal.classList.remove('hidden');
+    };
 
-    // 갤러리 닫기 (배경 클릭)
-    galleryModal.addEventListener('click', (e) => {
-        if (e.target === galleryModal) {
-            galleryModal.classList.add('hidden');
+    // 3. 삭제 확정 버튼 클릭
+    confirmImgDeleteBtn.addEventListener('click', async () => {
+        if (!pendingImageId) return;
+
+        try {
+            const res = await fetch(`/api/images/${pendingImageId}`, { method: 'DELETE' });
+            const result = await res.json();
+
+            if (result.success) {
+                // 성공 시 모달 닫고 갤러리 새로고침
+                imageDeleteModal.classList.add('hidden');
+                galleryBtn.click(); // 목록 다시 불러오기 (간편한 방법)
+            } else {
+                alert('삭제 실패');
+            }
+        } catch (e) {
+            console.error(e);
+            alert('오류 발생');
         }
     });
+
+    // 4. 모달 닫기 (취소 버튼)
+    cancelImgDeleteBtn.addEventListener('click', () => {
+        imageDeleteModal.classList.add('hidden');
+        pendingImageId = null;
+    });
+
+    // 5. 모달 배경 클릭 닫기 (갤러리 & 삭제모달 둘 다)
+    window.addEventListener('click', (e) => {
+        if (e.target === galleryModal) galleryModal.classList.add('hidden');
+        if (e.target === imageDeleteModal) imageDeleteModal.classList.add('hidden');
+    });
+
+    closeGalleryBtn.addEventListener('click', () => galleryModal.classList.add('hidden'));
 });
 </script>
 </html>

@@ -724,3 +724,119 @@ body {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
+/* 갤러리 이미지 삭제 버튼 */
+.gallery-delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    opacity: 0; /* 평소엔 숨김 */
+    transition: all 0.2s;
+    z-index: 10;
+}
+
+.gallery-delete-btn:hover {
+    background: #ef4444; /* 빨간색 */
+    border-color: #ef4444;
+}
+
+.gallery-item:hover .gallery-delete-btn {
+    opacity: 1; /* 마우스 올리면 보임 */
+}
+/* ... 기존 스타일들 ... */
+
+    /* [NEW] 마이페이지 전용 버튼 스타일 */
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .primary-btn {
+        background: #4facfe; /* 파란색 */
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .primary-btn:hover {
+        background: #3b82f6;
+    }
+
+    .secondary-btn {
+        background: #333; /* 어두운 회색 */
+        color: #ddd;
+        border: 1px solid #555;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 14px;
+    }
+
+    .secondary-btn:hover {
+        background: #444;
+        color: white;
+    }
+    /* ... 기존 스타일들 ... */
+
+    /* [NEW] 마이페이지 전용 버튼 스타일 */
+    .btn-group {
+        display: flex;
+        gap: 12px;
+        margin-top: 16px;
+    }
+
+    .primary-btn {
+        background: #4facfe; /* 파란색 */
+        color: white;
+        border: none;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .primary-btn:hover {
+        background: #3b82f6;
+    }
+
+    .secondary-btn {
+        background: #333; /* 어두운 회색 */
+        color: #ddd;
+        border: 1px solid #555;
+        padding: 12px 24px;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.2s;
+        font-size: 14px;
+    }
+
+    .secondary-btn:hover {
+        background: #444;
+        color: white;
+    }

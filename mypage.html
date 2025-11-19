@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>마이페이지 - ChatCheappt</title>
+    <link rel="stylesheet" href="styles.css">
+    <style>
+        .mypage-container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; margin-bottom: 40px; }
+        .stat-card { background: #2f2f2f; padding: 24px; border-radius: 16px; text-align: center; border: 1px solid rgba(255,255,255,0.1); }
+        .stat-number { font-size: 32px; font-weight: bold; color: #4facfe; margin: 10px 0; }
+        .stat-label { color: #888; font-size: 14px; }
+        
+        .section-title { font-size: 20px; font-weight: 600; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+        
+        .profile-section { display: flex; gap: 30px; align-items: flex-start; background: #1a1a1a; padding: 30px; border-radius: 16px; }
+        .profile-img-wrapper { position: relative; width: 120px; height: 120px; }
+        .profile-img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; border: 3px solid #2f2f2f; }
+        .profile-edit-btn { position: absolute; bottom: 0; right: 0; background: #4facfe; border: none; width: 32px; height: 32px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; color: white; }
+        
+        .form-grid { flex: 1; display: grid; gap: 20px; }
+        .form-group label { display: block; font-size: 13px; color: #888; margin-bottom: 8px; }
+        .form-input { width: 100%; padding: 12px; background: #2f2f2f; border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; color: white; }
+        
+        .back-btn { display: inline-flex; align-items: center; gap: 8px; color: #888; text-decoration: none; margin-bottom: 20px; font-size: 14px; }
+        .back-btn:hover { color: white; }
+    </style>
+</head>
+<body>
+    <div class="app-container" style="overflow-y: auto; display: block;">
+        <div class="mypage-container">
+            <a href="index.html" class="back-btn">← 채팅으로 돌아가기</a>
+            
+            <h1 style="margin-bottom: 30px;">마이페이지</h1>
+
+            <div class="section-title">📊 이번 달 사용량 (Usage)</div>
+            <div class="dashboard-grid">
+                <div class="stat-card">
+                    <div class="stat-label">총 사용 금액</div>
+                    <div class="stat-number" id="totalCost">0원</div>
+                    <div class="stat-label" id="totalCostDollar" style="font-size: 12px; color: #555;">($0.00)</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">대화 메시지 수</div>
+                    <div class="stat-number" id="msgCount">0</div>
+                    <div class="stat-label">건</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">생성한 이미지</div>
+                    <div class="stat-number" id="imgCount">0</div>
+                    <div class="stat-label">장</div>
+                </div>
+                <div class="stat-card">
+                <div class="stat-label">가입일</div>
+                <div class="stat-number" id="joinDate" style="font-size: 24px;">-</div>
+                <div class="stat-label" id="joinDays" style="font-size: 12px; color: #555;">(D+0일)</div>
+            </div>
+            </div>
+
+            <div class="section-title">⚙️ 프로필 설정</div>
+            <div class="profile-section">
+                <div class="profile-img-wrapper">
+                    <img id="profileImage" src="https://via.placeholder.com/150?text=User" class="profile-img">
+                    <button class="profile-edit-btn" onclick="document.getElementById('profileInput').click()">✎</button>
+                    <input type="file" id="profileInput" accept="image/*" style="display: none;">
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>이름</label>
+                        <input type="text" id="nameInput" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label>새 비밀번호 (변경할 경우만 입력)</label>
+                        <input type="password" id="passwordInput" class="form-input" placeholder="••••••">
+                    </div>
+                    <button id="saveBtn" class="primary-btn" style="width: 100%; margin-top: 10px;">저장하기</button>
+                </div>
+                </div> <div class="section-title" style="margin-top: 40px;">🤖 GPT 역할 설정 (Personal)</div>
+            <div class="profile-section" style="display: block;">
+                <p style="font-size: 14px; color: #bbb; margin-bottom: 12px;">
+                    AI의 성격이나 말투를 미리 정해주세요.<br>
+                    (예: "너는 20년 차 파이썬 개발자야", "반말을 사용하는 친근한 친구처럼 대해줘")
+                </p>
+                <textarea id="systemPromptInput" class="form-input" rows="4" 
+                    style="width: 100%; resize: vertical; margin-bottom: 16px; line-height: 1.6;" 
+                    placeholder="기본값: 도움이 되는 AI 비서"></textarea>
+                
+                <div style="display: flex; gap: 10px;">
+                    <div class="btn-group">
+                        <button id="savePromptBtn" class="primary-btn">
+                            설정 저장
+                        </button>
+                        <button id="resetPromptBtn" class="secondary-btn">
+                            초기화
+                        </button>
+                    </div>
+                </div>
+            </div>
+            </div>
+            
+        </div>
+    </div>
+
+    
+    <div id="customAlert" class="modal hidden">
+        <div class="modal-content" style="max-width: 360px; height: auto; text-align: center; padding: 30px;">
+            <h3 id="alertTitle" style="font-size: 20px; margin-bottom: 12px;">알림</h3>
+            <p id="alertMessage" style="font-size: 14px; color: #bbb; margin-bottom: 24px; line-height: 1.5;"></p>
+            <button id="alertOkBtn" class="primary-btn" style="width: 100%;">확인</button>
+        </div>
+    </div>
+
+    <div id="customConfirm" class="modal hidden">
+        <div class="modal-content" style="max-width: 360px; height: auto; text-align: center; padding: 30px;">
+            <h3 style="font-size: 20px; margin-bottom: 12px;">확인</h3>
+            <p id="confirmMessage" style="font-size: 14px; color: #bbb; margin-bottom: 24px; line-height: 1.5;"></p>
+            <div style="display: flex; gap: 10px; width: 100%;">
+                <button id="confirmCancelBtn" class="secondary-btn" style="flex: 1; justify-content: center;">취소</button>
+                <button id="confirmOkBtn" class="primary-btn" style="flex: 1; justify-content: center;">확인</button>
+            </div>
+        </div>
+    </div>
+</body>
+<script>
+    const userStr = localStorage.getItem('user');
+    if (!userStr) window.location.href = 'login.html';
+    const user = JSON.parse(userStr);
+
+    // === [NEW] 커스텀 모달 헬퍼 함수들 ===
+    const alertModal = document.getElementById('customAlert');
+    const confirmModal = document.getElementById('customConfirm');
+    let confirmCallback = null; // 확인 버튼 눌렀을 때 실행할 함수
+
+    // 1. 알림창 띄우기 함수
+    function showAlert(message, title = "알림") {
+        document.getElementById('alertTitle').textContent = title;
+        document.getElementById('alertMessage').textContent = message;
+        alertModal.classList.remove('hidden');
+    }
+
+    // 2. 확인창 띄우기 함수
+    function showConfirm(message, callback) {
+        document.getElementById('confirmMessage').textContent = message;
+        confirmCallback = callback; // 실행할 함수 저장
+        confirmModal.classList.remove('hidden');
+    }
+
+    // 모달 이벤트 리스너 (닫기 및 실행)
+    document.getElementById('alertOkBtn').addEventListener('click', () => {
+        alertModal.classList.add('hidden');
+        if (document.getElementById('alertMessage').textContent === '저장되었습니다!') {
+            window.location.reload(); // 저장 성공 시 새로고침
+        }
+    });
+
+    document.getElementById('confirmCancelBtn').addEventListener('click', () => {
+        confirmModal.classList.add('hidden');
+        confirmCallback = null;
+    });
+
+    document.getElementById('confirmOkBtn').addEventListener('click', () => {
+        confirmModal.classList.add('hidden');
+        if (confirmCallback) confirmCallback(); // 저장해둔 함수 실행
+    });
+
+    // 배경 클릭 시 닫기
+    window.addEventListener('click', (e) => {
+        if (e.target === alertModal) alertModal.classList.add('hidden');
+        if (e.target === confirmModal) confirmModal.classList.add('hidden');
+    });
+    // =====================================
+
+    // 초기 세팅
+    document.getElementById('nameInput').value = user.name;
+    if (user.profile_image) document.getElementById('profileImage').src = user.profile_image;
+
+    // 1. 사용량 데이터 가져오기
+    fetch(`/api/user/${user.id}/usage`)
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('totalCost').textContent = data.cost + '원';
+            document.getElementById('totalCostDollar').textContent = `($${data.apiCostDollar})`;
+            document.getElementById('msgCount').textContent = data.messageCount;
+            document.getElementById('imgCount').textContent = data.imageCount;
+
+            if (data.joinDate) {
+                const date = new Date(data.joinDate);
+                const dateStr = date.toLocaleDateString('ko-KR', { year: 'numeric', month: 'long', day: 'numeric' });
+                document.getElementById('joinDate').textContent = dateStr;
+
+                const now = new Date();
+                const diffTime = Math.abs(now - date);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)); 
+                document.getElementById('joinDays').textContent = `(D+${diffDays}일)`;
+            }
+        });
+
+    // 2. 프로필 사진 미리보기
+    let newProfileBase64 = null;
+    document.getElementById('profileInput').addEventListener('change', (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                document.getElementById('profileImage').src = e.target.result;
+                newProfileBase64 = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+
+    // 3. 프로필 저장하기 (수정됨: 커스텀 모달 사용)
+    document.getElementById('saveBtn').addEventListener('click', () => {
+        const name = document.getElementById('nameInput').value;
+        const password = document.getElementById('passwordInput').value;
+        
+        // confirm 대신 showConfirm 사용
+        showConfirm('회원 정보를 수정하시겠습니까?', async () => {
+            try {
+                const res = await fetch('/api/user/update', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        userId: user.id,
+                        name: name,
+                        password: password || null,
+                        profileImageBase64: newProfileBase64
+                    })
+                });
+                
+                const result = await res.json();
+                if (result.success) {
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    showAlert('저장되었습니다!'); // alert 대신 showAlert
+                } else {
+                    showAlert('실패: ' + result.message);
+                }
+            } catch (e) {
+                console.error(e);
+                showAlert('서버 에러 발생');
+            }
+        });
+    });
+
+    // GPT 역할 설정 (로컬 스토리지)
+    const systemPromptInput = document.getElementById('systemPromptInput');
+    const savedPrompt = localStorage.getItem('systemPrompt');
+    if (savedPrompt) systemPromptInput.value = savedPrompt;
+
+    // 설정 저장 버튼 (수정됨)
+    document.getElementById('savePromptBtn').addEventListener('click', () => {
+        const val = systemPromptInput.value.trim();
+        localStorage.setItem('systemPrompt', val);
+        showAlert('GPT 역할이 저장되었습니다!\n다음 대화부터 적용됩니다.');
+    });
+
+    // 설정 초기화 버튼 (수정됨)
+    document.getElementById('resetPromptBtn').addEventListener('click', () => {
+        showConfirm('설정을 초기화 하시겠습니까?', () => {
+            localStorage.removeItem('systemPrompt');
+            systemPromptInput.value = '';
+            showAlert('기본 설정으로 돌아갑니다.');
+        });
+    });
+</script>
+</html>
