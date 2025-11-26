@@ -131,7 +131,7 @@ body {
 .sidebar-footer {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 8px;
-    min-height: 139px; /* 오른쪽 입력창 영역과 높이를 맞춤 (조절 가능) */
+    min-height: 139px;
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
@@ -156,7 +156,6 @@ body {
     background: #212121;
 }
 
-/* Main Content Styles */
 .main-content {
     flex: 1;
     display: flex;
@@ -190,7 +189,6 @@ body {
     font-weight: 600;
 }
 
-/* Messages Area */
 .messages-container {
     flex: 1;
     overflow-y: auto;
@@ -300,7 +298,6 @@ body {
     word-wrap: break-word;
 }
 
-/* Input Area */
 .input-container {
     border-top: 1px solid rgba(255, 255, 255, 0.1);
     padding: 25px;
@@ -327,9 +324,9 @@ body {
     resize: none;
     max-height: 200px;
     font-family: inherit;
-    resize: none;      /* 사용자가 마우스로 크기 조절 못하게 막음 */
-    max-height: 200px; /* 너무 커지면 200px까지만 커지게 제한 */
-    overflow-y: hidden; /* 평소엔 스크롤바 숨김 */
+    resize: none;
+    max-height: 200px;
+    overflow-y: hidden;
 }
 
 .message-input::placeholder {
@@ -367,7 +364,6 @@ body {
     color: rgba(255, 255, 255, 0.4);
 }
 
-/* Scrollbar Styles */
 ::-webkit-scrollbar {
     width: 8px;
 }
@@ -385,7 +381,6 @@ body {
     background: rgba(255, 255, 255, 0.3);
 }
 
-/* Utility Classes */
 .hidden {
     display: none !important;
 }
@@ -397,7 +392,6 @@ body {
     gap: 4px;
 }
 
-/* Responsive */
 @media (max-width: 768px) {
     .sidebar {
         position: absolute;
@@ -412,9 +406,6 @@ body {
     }
 }
 
-/* styles.css 맨 아래 추가 */
-
-/* 모델 선택 버튼 */
 .model-selector {
     position: relative;
     margin-left: 8px;
@@ -439,7 +430,6 @@ body {
     background: rgba(255,255,255,0.1);
 }
 
-/* 드롭다운 메뉴 */
 .model-menu {
     position: absolute;
     top: 100%;
@@ -480,15 +470,14 @@ body {
 .gallery-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    
-    /* [수정됨] 가로는 16px 유지, 세로는 32px로 2배 늘림 */
+
     column-gap: 16px; 
     row-gap: 32px; 
     
     overflow-y: auto;
     flex: 1;
     padding-right: 8px;
-    padding-bottom: 40px; /* 맨 밑바닥 공간도 좀 넉넉하게 추가 */
+    padding-bottom: 40px;
 }
 
 .gallery-item {
@@ -552,18 +541,18 @@ body {
     background: #4facfe;
     color: white;
 }
-/* 갤러리 모달창 디자인 (이게 없으면 안 보임!) */
+
 .modal {
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8); /* 배경 어둡게 */
+    background: rgba(0, 0, 0, 0.8);
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2000; /* 맨 위에 띄우기 */
+    z-index: 2000;
 }
 
 .modal.hidden {
@@ -576,13 +565,12 @@ body {
     border-radius: 16px;
     width: 90%;
     max-width: 900px;
-    height: 80vh; /* 화면 높이의 80% */
+    height: 80vh;
     display: flex;
     flex-direction: column;
     box-shadow: 0 10px 30px rgba(0,0,0,0.5);
 }
 
-/* 이미지 첨부 스타일 */
 .attach-btn {
     padding: 8px;
     background: transparent;
@@ -600,7 +588,7 @@ body {
 
 .image-preview-container {
     max-width: 800px;
-    margin: 0 auto 10px; /* 입력창 위에 띄움 */
+    margin: 0 auto 10px;
     padding: 0 16px;
 }
 
@@ -636,11 +624,6 @@ body {
     background: #555;
 }
 
-/* styles.css 맨 아래 추가 */
-
-/* --- 마크다운 스타일 (AI 응답 예쁘게 만들기) --- */
-
-/* 1. 기본 텍스트 간격 */
 .markdown-body p {
     margin-bottom: 12px;
     line-height: 1.7;
@@ -649,22 +632,20 @@ body {
     margin-bottom: 0;
 }
 
-/* 2. 코드 블록 (검은 박스) */
 .markdown-body pre {
-    background: #0d0d0d !important; /* 아주 어두운 배경 */
+    background: #0d0d0d !important;
     padding: 12px;
     border-radius: 8px;
-    overflow-x: auto; /* 가로 스크롤 */
+    overflow-x: auto;
     margin: 12px 0;
     border: 1px solid rgba(255,255,255,0.1);
 }
 
 .markdown-body code {
-    font-family: 'Consolas', 'Monaco', monospace; /* 코딩 폰트 */
+    font-family: 'Consolas', 'Monaco', monospace;
     font-size: 14px;
 }
 
-/* 인라인 코드 (문장 중간에 있는 코드) */
 .markdown-body p code, 
 .markdown-body li code {
     background: rgba(255, 255, 255, 0.15);
@@ -673,7 +654,6 @@ body {
     color: #e2e8f0;
 }
 
-/* 3. 리스트 (글머리 기호) */
 .markdown-body ul, .markdown-body ol {
     margin-left: 20px;
     margin-bottom: 12px;
@@ -682,7 +662,6 @@ body {
     margin-bottom: 4px;
 }
 
-/* 4. 제목 (h1, h2, h3...) */
 .markdown-body h1, .markdown-body h2, .markdown-body h3 {
     margin-top: 24px;
     margin-bottom: 12px;
@@ -693,7 +672,6 @@ body {
 .markdown-body h2 { font-size: 1.3em; }
 .markdown-body h3 { font-size: 1.1em; }
 
-/* 5. 표 (Table) */
 .markdown-body table {
     border-collapse: collapse;
     width: 100%;
@@ -708,15 +686,12 @@ body {
     background-color: rgba(255,255,255,0.1);
 }
 
-/* 6. 인용문 (Blockquote) */
 .markdown-body blockquote {
     border-left: 4px solid #4facfe;
     margin: 12px 0;
     padding-left: 16px;
     color: #aaa;
 }
-
-/* styles.css 맨 아래 추가 */
 
 .cost-badge {
     margin-top: 8px;
@@ -728,7 +703,7 @@ body {
     border-radius: 12px;
     border: 1px solid rgba(255, 255, 255, 0.1);
 }
-/* 갤러리 이미지 삭제 버튼 */
+
 .gallery-delete-btn {
     position: absolute;
     top: 8px;
@@ -743,104 +718,100 @@ body {
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    opacity: 0; /* 평소엔 숨김 */
+    opacity: 0;
     transition: all 0.2s;
     z-index: 10;
 }
 
 .gallery-delete-btn:hover {
-    background: #ef4444; /* 빨간색 */
+    background: #ef4444;
     border-color: #ef4444;
 }
 
 .gallery-item:hover .gallery-delete-btn {
-    opacity: 1; /* 마우스 올리면 보임 */
+    opacity: 1;
 }
-/* ... 기존 스타일들 ... */
 
-    /* [NEW] 마이페이지 전용 버튼 스타일 */
-    .btn-group {
-        display: flex;
-        gap: 12px;
-        margin-top: 16px;
-    }
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
 
-    .primary-btn {
-        background: #4facfe; /* 파란색 */
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+.primary-btn {
+    background: #4facfe;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-    .primary-btn:hover {
-        background: #3b82f6;
-    }
+.primary-btn:hover {
+    background: #3b82f6;
+}
 
-    .secondary-btn {
-        background: #333; /* 어두운 회색 */
-        color: #ddd;
-        border: 1px solid #555;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 14px;
-    }
+.secondary-btn {
+    background: #333;
+    color: #ddd;
+    border: 1px solid #555;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+}
 
-    .secondary-btn:hover {
-        background: #444;
-        color: white;
-    }
-    /* ... 기존 스타일들 ... */
+.secondary-btn:hover {
+    background: #444;
+    color: white;
+}
 
-    /* [NEW] 마이페이지 전용 버튼 스타일 */
-    .btn-group {
-        display: flex;
-        gap: 12px;
-        margin-top: 16px;
-    }
+.btn-group {
+    display: flex;
+    gap: 12px;
+    margin-top: 16px;
+}
 
-    .primary-btn {
-        background: #4facfe; /* 파란색 */
-        color: white;
-        border: none;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
+.primary-btn {
+    background: #4facfe;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
 
-    .primary-btn:hover {
-        background: #3b82f6;
-    }
+.primary-btn:hover {
+    background: #3b82f6;
+}
 
-    .secondary-btn {
-        background: #333; /* 어두운 회색 */
-        color: #ddd;
-        border: 1px solid #555;
-        padding: 12px 24px;
-        border-radius: 8px;
-        font-weight: 600;
-        cursor: pointer;
-        transition: background 0.2s;
-        font-size: 14px;
-    }
+.secondary-btn {
+    background: #333;
+    color: #ddd;
+    border: 1px solid #555;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    font-size: 14px;
+}
 
-    .secondary-btn:hover {
-        background: #444;
-        color: white;
-    }
+.secondary-btn:hover {
+    background: #444;
+    color: white;
+}

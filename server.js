@@ -328,7 +328,7 @@ app.post('/api/user/update', async (req, res) => {
         if (updateFields.length === 0) return res.json({ message: '변경할 내용이 없습니다.' });
 
         // DB 업데이트 실행
-        queryParams.push(userId); // WHERE user_id = ?
+        queryParams.push(userId);
         const sql = `UPDATE users SET ${updateFields.join(', ')} WHERE id = ?`;
         
         await db.promise().query(sql, queryParams);
