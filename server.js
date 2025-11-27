@@ -30,7 +30,7 @@ app.use(cors());
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: 'wowxc', // 본인 비밀번호 확인!
+    password: '1234', // 본인 비밀번호 확인!
     database: 'chatgpt_clone'
 });
 

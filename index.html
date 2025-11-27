@@ -256,6 +256,30 @@
         </div>
     </div>
 </div>
+<div id="settingsModal" class="modal hidden">
+    <div class="modal-content" style="max-width: 400px; height: auto;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--border-color);">
+            <h3 style="font-size: 20px; font-weight: 600; color: var(--text-primary);">⚙️ 환경 설정</h3>
+            <button id="closeSettingsBtn" style="background: none; border: none; color: var(--text-primary); cursor: pointer; font-size: 24px;">&times;</button>
+        </div>
+
+        <div style="margin-bottom: 24px;">
+            <h4 style="font-size: 16px; margin-bottom: 12px; color: var(--text-primary);">화면 모드</h4>
+            <div style="display: flex; gap: 10px; background: var(--bg-input); padding: 4px; border-radius: 8px;">
+                <button id="darkModeBtn" class="theme-btn active" style="flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    🌙 다크 모드
+                </button>
+                <button id="lightModeBtn" class="theme-btn" style="flex: 1; padding: 10px; border: none; border-radius: 6px; cursor: pointer; font-weight: 600;">
+                    ☀️ 라이트 모드
+                </button>
+            </div>
+        </div>
+
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;">
+            * 설정은 브라우저에 자동 저장됩니다.
+        </p>
+    </div>
+</div>
 </body>
 <script>
 document.addEventListener('DOMContentLoaded', () => {
@@ -774,6 +798,56 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     closeGalleryBtn.addEventListener('click', () => galleryModal.classList.add('hidden'));
+
+    // ==========================================
+    // [NEW] 설정 모달 & 테마 변경 기능
+    // ==========================================
+    const settingsBtn = document.getElementById('settingsBtn');
+    const settingsModal = document.getElementById('settingsModal');
+    const closeSettingsBtn = document.getElementById('closeSettingsBtn');
+    const darkModeBtn = document.getElementById('darkModeBtn');
+    const lightModeBtn = document.getElementById('lightModeBtn');
+
+    // 1. 설정 모달 열기
+    if (settingsBtn) {
+        settingsBtn.addEventListener('click', () => {
+            settingsModal.classList.remove('hidden');
+        });
+    }
+
+    // 2. 설정 모달 닫기
+    if (closeSettingsBtn) {
+        closeSettingsBtn.addEventListener('click', () => {
+            settingsModal.classList.add('hidden');
+        });
+    }
+
+    // 3. 테마 변경 함수
+    function applyTheme(theme) {
+        if (theme === 'light') {
+            document.body.classList.add('light-mode');
+            lightModeBtn.classList.add('active');
+            darkModeBtn.classList.remove('active');
+        } else {
+            document.body.classList.remove('light-mode');
+            darkModeBtn.classList.add('active');
+            lightModeBtn.classList.remove('active');
+        }
+        localStorage.setItem('theme', theme); // 저장
+    }
+
+    // 4. 버튼 클릭 이벤트
+    darkModeBtn.addEventListener('click', () => applyTheme('dark'));
+    lightModeBtn.addEventListener('click', () => applyTheme('light'));
+
+    // 5. 초기 실행 시 저장된 테마 불러오기
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    applyTheme(savedTheme);
+
+    // 모달 배경 클릭 시 닫기 (설정 모달용 추가)
+    window.addEventListener('click', (e) => {
+        if (e.target === settingsModal) settingsModal.classList.add('hidden');
+    });
 });
 </script>
 </html>
