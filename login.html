@@ -73,9 +73,8 @@
         
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
-        const errorMessage = document.getElementById('errorMessage'); // 에러 표시 박스 가져오기
+        const errorMessage = document.getElementById('errorMessage');
 
-        // 에러 메시지 초기화 (다시 숨김)
         errorMessage.textContent = '';
         errorMessage.classList.add('hidden');
 
@@ -89,11 +88,9 @@
             const result = await response.json();
 
             if (response.ok) {
-                // [수정] 성공 alert 제거 -> 바로 이동
                 localStorage.setItem('user', JSON.stringify(result.user));
                 window.location.href = 'index.html';
             } else {
-                // [수정] 실패 alert 제거 -> 에러 박스에 글자 띄우기
                 errorMessage.textContent = result.message;
                 errorMessage.classList.remove('hidden');
             }

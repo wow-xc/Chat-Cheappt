@@ -81,7 +81,7 @@
                 </div>
                 
                 <div class="form-options">
-                        <span>OpenAI API Key 발급 방법을 모른다면? <a href="https://www.google.com/search?client=firefox-b-d&q=openai+api+key+%EB%B0%9C%EA%B8%89+%EB%B0%A9%EB%B2%95" class="auth-link">클릭</a></span>
+                        <span>OpenAI API Key 발급 방법을 모른다면? <a href="https://www.google.com/search?client=firefox-b-d&q=openai+api+key" class="auth-link">클릭</a></span>
                 </div>
 
                 <!-- 이용약관 동의 (오류 수정됨) -->
@@ -116,11 +116,9 @@
         const apiKey = document.getElementById('apiKey').value;
         const errorMessage = document.getElementById('errorMessage');
 
-        // 에러 메시지 초기화
         errorMessage.textContent = '';
         errorMessage.classList.add('hidden');
 
-        // 비밀번호 확인 검사
         if (password !== confirmPassword) {
             errorMessage.textContent = "비밀번호가 일치하지 않습니다.";
             errorMessage.classList.remove('hidden');
@@ -137,10 +135,8 @@
             const result = await response.json();
             
             if (response.ok) {
-                // [수정] 성공 alert 제거 -> 바로 로그인 페이지로 이동
                 window.location.href = 'login.html';
             } else {
-                // [수정] 실패 alert 제거 -> 에러 박스 표시
                 errorMessage.textContent = result.message;
                 errorMessage.classList.remove('hidden');
             }

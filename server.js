@@ -30,7 +30,7 @@ app.use(cors());
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
-    password: '1234', // 본인 비밀번호 확인!
+    password: 'wowxc', // 본인 비밀번호 확인!
     database: 'chatgpt_clone'
 });
 
@@ -71,16 +71,13 @@ app.get('/api/conversations/:userId', (req, res) => {
     });
 });
 
-// 4. 특정 대화의 메시지 내역 가져오기 (수정됨: 불러올 때 환율 적용 💱)
+// 4. 특정 대화의 메시지 내역 가져오기
 app.get('/api/conversations/:conversationId/messages', (req, res) => {
     const sql = 'SELECT * FROM messages WHERE conversation_id = ? ORDER BY created_at ASC';
     db.query(sql, [req.params.conversationId], (err, results) => {
         if (err) return res.status(500).json({ error: 'DB 오류' });
-
-        // [핵심 수정] DB에서 꺼낸 달러($) 비용을 원화(KRW)로 변환!
         const messagesWithKRW = results.map(msg => ({
             ...msg,
-            // cost가 있으면 환율(1400) 곱하기, 없으면 0원
             cost: msg.cost ? Math.round(msg.cost * EXCHANGE_RATE * 100) / 100 : 0
         }));
 
@@ -88,7 +85,7 @@ app.get('/api/conversations/:conversationId/messages', (req, res) => {
     });
 });
 
-// [NEW] 4.5 이미지 라이브러리 목록 가져오기
+// 4.5 이미지 라이브러리 목록 가져오기
 // ==========================================
 app.get('/api/images/:userId', (req, res) => {
     const sql = 'SELECT * FROM generated_images WHERE user_id = ? ORDER BY created_at DESC';
@@ -98,7 +95,7 @@ app.get('/api/images/:userId', (req, res) => {
     });
 });
 
-// 5. [UPDATE] 채팅 + 비용 계산 + 모델명 저장 통합 API
+// 5. 채팅 + 비용 계산 + 모델명 저장 통합 API
 app.post('/api/chat', async (req, res) => {
     const { userId, message, conversationId, model, image } = req.body;
     const selectedModel = model || "gpt-4o";
@@ -155,7 +152,6 @@ app.post('/api/chat', async (req, res) => {
         } 
         // [B] GPT (텍스트 & 비전)
         else {
-            // [수정됨] 프론트에서 보낸 설정이 있으면 적용, 없으면 기본값
             const customSystemPrompt = req.body.systemInstruction;
             const defaultSystemPrompt = `You are a helpful assistant. Model: ${selectedModel}.`;
             
@@ -167,11 +163,9 @@ app.post('/api/chat', async (req, res) => {
             const [historyRows] = await db.promise().query('SELECT role, content FROM messages WHERE conversation_id = ? ORDER BY created_at ASC', [currentConvId]);
             
             const messagesForAI = [
-                systemMessage, // 여기에 적용됨!
+                systemMessage,
                 ...historyRows.map(row => ({ role: row.role, content: row.content })),
             ];
-
-            // ... (이하 이미지 처리 및 요청 로직은 기존과 동일) ...
             if (image) {
                 messagesForAI.push({
                     role: "user",
@@ -188,7 +182,6 @@ app.post('/api/chat', async (req, res) => {
 
             reply = completion.choices[0].message.content;
             
-            // ... (이하 비용 계산 로직 동일) ...
             if (completion.usage) {
                 usageData = completion.usage;
                 const priceInfo = PRICING[selectedModel] || PRICING['gpt-4o'];
@@ -198,8 +191,7 @@ app.post('/api/chat', async (req, res) => {
             }
         }
 
-        // 5. 결과 및 비용 저장 (여기가 맨 마지막에 와야 함!)
-        // (DB에 model 컬럼이 추가되었으므로 selectedModel도 같이 저장)
+        // 5. 결과 및 비용 저장
         await db.promise().query(
             'INSERT INTO messages (conversation_id, role, content, prompt_tokens, completion_tokens, cost, model) VALUES (?, ?, ?, ?, ?, ?, ?)', 
             [currentConvId, 'assistant', reply, usageData.prompt_tokens, usageData.completion_tokens, totalCost, selectedModel]
@@ -236,13 +228,7 @@ app.delete('/api/conversations/:id', (req, res) => {
     });
 });
 
-// ... (기존 코드들) ...
-
-// ==========================================
-// [NEW] 마이페이지용 API 모음
-// ==========================================
-
-// 1. 사용량 대시보드 데이터 조회 (수정됨: 가입일 추가)
+// 1. 사용량 대시보드 데이터 조회
 app.get('/api/user/:id/usage', async (req, res) => {
     const userId = req.params.id;
     try {
@@ -338,7 +324,7 @@ app.post('/api/user/update', async (req, res) => {
     }
 });
 
-// [NEW] 이미지 삭제 API (DB + 파일 삭제)
+// 이미지 삭제 API (DB + 파일 삭제)
 app.delete('/api/images/:id', async (req, res) => {
     const imageId = req.params.id;
 

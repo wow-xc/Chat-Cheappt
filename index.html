@@ -178,7 +178,6 @@
                     </div>
                 </div>
                 <div id="messagesList" class="messages-list">
-                    <!-- 메시지가 여기에 동적으로 추가됩니다 -->
                 </div>
             </div>
 
@@ -528,7 +527,7 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.readAsDataURL(file);
     });
 
-    // 3. [수정됨] 미리보기 삭제 버튼 (버튼 상태 재확인)
+    // 3. 미리보기 삭제 버튼 (버튼 상태 재확인)
     removeImageBtn.addEventListener('click', () => {
         fileInput.value = '';
         currentImageBase64 = null;
